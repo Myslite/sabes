@@ -1,0 +1,16 @@
+@media print {
+
+	.pagenum{
+		visibility: screenonly;
+	}
+
+	body{
+		font-family: 'gentiumbookbasic';
+		font-size: 10pt;
+	}
+	
+	p{
+		text-align : justify;
+	}
+
+}
