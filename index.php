@@ -38,15 +38,32 @@ echo '<input type="radio" name="source" value="gutenberg" checked="checked"/> Pr
 echo '<input type="radio" name="source" value="autre"/> Other<br>';
 echo '<br><input type="submit" value="Envoyer" />';
 echo '</form>';
-//Check if all buttons are selected/full
+//Checks if all buttons are selected/full
 if(isset($_POST["book"], $_POST["bouton"], $_POST["source"])){
 	if($_POST["book"] && $_POST["bouton"] && $_POST["source"]){
 		$_SESSION["source"] = $_POST["source"];
 		$_SESSION["bouton"] = $_POST["bouton"];
 		$_SESSION["book"] = $_POST["book"];
-		//add session id in a variable in order to use it as path and file name
+		//adds session id in a variable in order to use it as path and file name
 		$id = session_id();
-		//create user path
+		//creates initial directories
+		if (!is_dir('books/')){
+			mkdir("books/"); 
+			chmod("books/", 0777);
+		}
+		if (!is_dir('books/html/')){
+			mkdir("books/html/"); 
+			chmod("books/html/", 0777);
+		}
+		if (!is_dir('books/pdf/')){
+			mkdir("books/pdf/"); 
+			chmod("books/pdf/", 0777);
+		}
+		if (!is_dir('tmp/')){
+			mkdir("tmp/"); 
+			chmod("tmp/", 0777);
+		}
+		//creates user path
 		if (!is_dir('books/html/' . $id)){
 			mkdir("books/html/" . $id); 
 			chmod("books/html/" . $id, 0777);
@@ -55,31 +72,31 @@ if(isset($_POST["book"], $_POST["bouton"], $_POST["source"])){
 			mkdir("tmp/" . $id); 
 			chmod("tmp/" . $id, 0777);
 		}
-		//check if the user choose a link from the gutenberg project
+		//checks if the user choose a link from the gutenberg project
 		if($_SESSION["source"] == 'gutenberg'){
 			$bdd_pdf_Name = file_get_contents('bdd_pdf.txt');
-			//format user's URL to text for secure reasons
+			//formats user's URL to text for secure reasons
 			$UserUrl =trim(htmlspecialchars($_SESSION["book"]));
-			//catch the book's number from URL
+			//catchs the book's number from URL
 			$ExplodeUrl = explode("/", trim($UserUrl, "/"));
-			//transform it to use it for the gutenberg mirror
+			//transforms it to use it for the gutenberg mirror
 			$BookNumber = end($ExplodeUrl);
 			$UrlMiddlePart1 = str_split($BookNumber);
 			$UrlMiddlePart2 = substr(implode("/", $UrlMiddlePart1), 0, -2);
 			$FileUrl = 'http://www.gutenberg.lib.md.us/' . $UrlMiddlePart2 . '/' . $BookNumber . '/' . $BookNumber . '-h.zip';
 			$fileName = $BookNumber. '-h';
-			//check if the URL is valide
+			//checks if the URL is valide
 			$UrlValide = @get_headers($FileUrl);
 			if (strpos($UrlValide[0],'404') === false){
-				//read the data base before to run the script
+				//reads the data base before to run the script
 				if(strpos($bdd_pdf_Name, $fileName) !== FALSE){
 					//if file was already generated, it show the result
 					echo '<br>Le fichier pdf a déjà  été généré :';
 					if($_SESSION["bouton"] == 'non-duplex'){
 						// in two file for non-duplex printers
-						//check if file exist
+						//checks if file exist
 						if(strpos($bdd_pdf_Name, $fileName . "_non_duplex") !== FALSE){
-							//print a download button
+							//prints a download button
 							echo '<br>Recto :';
 							echo '<FORM ACTION="books/pdf/' . $fileName . '_odd.pdf" target="_blank">';
 							echo '<INPUT TYPE="SUBMIT" VALUE="Télécharger"/>';
@@ -88,7 +105,7 @@ if(isset($_POST["book"], $_POST["bouton"], $_POST["source"])){
 							echo '<FORM ACTION="books/pdf/' . $fileName . '_even.pdf" target="_blank">';
 							echo '<INPUT TYPE="SUBMIT" VALUE="Télécharger"/>';
 							echo '</FORM>';
-							//erase all user's session's files & paths
+							//erases all user's session's files & paths
 							include ('lib/erase.php');
 						}
 						else {
@@ -110,13 +127,13 @@ if(isset($_POST["book"], $_POST["bouton"], $_POST["source"])){
 					//if the file is not in the data base, the script is running
 					echo '<br>Veuillez patienter, le fichier va être généré.';
 					$newfile = 'tmp/' . $id . 'tmp_file.zip';
-					//copy the zip file from gutenberg into the local server
+					//copies the zip file from gutenberg into the local server
 					if (!copy($FileUrl, $newfile)) {
 						echo "failed to copy $file...\n";
 						include ('lib/erase.php');
 					} 
 					$zip = new ZipArchive();
-					//extract the archive
+					//extracts the archive
 					if ($zip->open($newfile) ===TRUE) {
 						$zip->extractTo('books/html/' .$id. '/');
 						$zip->close();
@@ -153,7 +170,7 @@ if(isset($_POST["book"], $_POST["bouton"], $_POST["source"])){
 				include ('lib/erase.php');
 			}
 		}
-		//check if the user choose a link from an other source
+		//checks if the user choose a link from an other source
 		if($_SESSION["source"] == 'autre'){
 			$UserUrl =trim(htmlspecialchars($_SESSION["book"]));
 			//checks if the url is pointing to an archive
